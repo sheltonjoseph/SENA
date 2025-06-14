@@ -1,0 +1,38 @@
+
+services:
+  db:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/mydb
+      OPENAI_API_KEY: ${OPENAI_API_KEY} # Ensure you set this in your .env or shell
+    ports:
+      - "5000:5000" # Or whatever port your backend runs on
+    depends_on:
+      - db
+    # Wait for DB to be ready before running commands
+    command: >
+      sh -c "npx prisma migrate dev --name init && npx prisma db seed && npm start"
+
+  frontend:
+    build: ./frontend
+    restart: always
+    ports:
+      - "3000:80" # Assuming frontend runs on 3000 and we map it to 80 in container
+    depends_on:
+      - backend
+
+volumes:
+  db-data: 

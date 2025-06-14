@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Location {
+  id          String  @id
+  name        String
+  address     String
+  description String
+  created_at  DateTime @default(now())
+  desks       Desk[]
+}
+
+model Desk {
+  id          String  @id
+  location_id String
+  name        String
+  floor       String
+  seat_type   String
+  description String
+  created_at  DateTime @default(now())
+  location    Location @relation(fields: [location_id], references: [id])
+  availability DeskAvailability[]
+}
+
+model TimeSlot {
+  id        String  @id
+  start_time String
+  end_time   String
+  label      String
+  availability DeskAvailability[]
+}
+
+model DeskAvailability {
+  id           String  @id
+  desk_id      String
+  date         String
+  time_slot_id String
+  price        Float
+  rating       Float
+  status       String
+  hold_expires_at DateTime?
+  desk         Desk     @relation(fields: [desk_id], references: [id])
+  timeSlot     TimeSlot @relation(fields: [time_slot_id], references: [id])
+  holds        Hold[]
+}
+
+model Hold {
+  id                   String  @id
+  desk_availability_id String
+  created_at           DateTime @default(now())
+  expires_at           DateTime
+  availability         DeskAvailability @relation(fields: [desk_availability_id], references: [id])
+  booking              Booking?
+}
+
+model Booking {
+  id              String  @id
+  hold_id         String  @unique
+  qr_code         String
+  pdf_ticket_url  String
+  confirmed_at    DateTime @default(now())
+  hold            Hold     @relation(fields: [hold_id], references: [id])
+}
